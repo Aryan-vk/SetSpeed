@@ -1,0 +1,129 @@
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define BLYNK_TEMPLATE_ID "TMPL3KKuexSVo"
+#define BLYNK_TEMPLATE_NAME "SetSpeed"
+#define BLYNK_AUTH_TOKEN "-OHijGlM7Gpyj0wa4LO8-AhsTILnxr-O"
+
+#define BLYNK_PRINT Serial
+
+#include <ESP8266WiFi.h>
+#include <BlynkSimpleEsp8266.h>
+
+char auth[] = BLYNK_AUTH_TOKEN;
+
+char ssid[] = "Galaxy M12A680";
+char pass[] = "1234567890";
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+
+// Declaration for SSD1306 display connected using I2C
+#define OLED_RESET     -1 // Reset pin
+#define SCREEN_ADDRESS 0x3C
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+#include<Servo.h>
+Servo servo;
+const int servo_pin=16;
+const int greenled=13;
+const int buzzer=15;
+const int yellowled=12;
+const int redled=14;
+
+void setup()
+{
+  pinMode(A0,INPUT);
+  //Serial.begin(115200);
+  
+  Serial.begin(9600);
+  servo.attach(servo_pin);
+  pinMode(greenled,OUTPUT);
+  pinMode(yellowled,OUTPUT);
+  pinMode(redled,OUTPUT);
+  pinMode(buzzer,OUTPUT);
+  // initialize the OLED object
+  if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    for(;;); // Don't proceed, loop forever
+  }
+Blynk.begin(auth, ssid, pass);
+}
+void loop()
+{
+  
+  int pot=analogRead(A0);
+  Serial.println("A0 rotation : ");
+  Serial.println(pot);
+  int srvo=map(pot,0,1024,0,180);
+   Serial.println("SERVO rotation : ");
+  Serial.println(srvo);
+  servo.write(srvo);
+
+  if((srvo>=60)&&(srvo<=90))
+  {
+    digitalWrite(redled,LOW);
+    digitalWrite(greenled,LOW);
+    digitalWrite(yellowled,HIGH);
+    digitalWrite(buzzer,LOW);
+    display.clearDisplay();
+    display.setCursor(0,0);
+    display.setTextColor(WHITE);
+    display.setTextSize(1);
+    display.println("KEEP CONSTANT OR SLOW DOWN SPEED.");
+    display.println("Your Speed is : ");
+    display.print(srvo/2);
+    display.print(" km/h.");
+    display.display();
+    delay(10);
+   // display.startscrollleft(0x00,0x00);
+    display.clearDisplay();
+    delay(50);
+  }
+  else if(srvo>=90)
+  {
+    digitalWrite(yellowled,LOW);
+    digitalWrite(greenled,LOW);
+    digitalWrite(redled,HIGH);
+    digitalWrite(buzzer,HIGH);    
+    display.clearDisplay();
+    display.setCursor(0,0);
+    display.setTextColor(WHITE);
+    display.setTextSize(1);
+    display.println("WARNING: SLOW DOWN SPEED.");
+    display.clearDisplay();
+    delay(20);
+    display.println("WARNING: SLOW DOWN SPEED.");
+    display.println("Your Speed is : ");
+    display.print(srvo/2);
+    display.print(" km/h.");
+    display.display();
+    delay(10);
+  //  display.startscrollleft(0x00,0x00);
+    display.clearDisplay();
+    delay(10);
+  }
+  else
+  {
+    digitalWrite(yellowled,LOW);
+    digitalWrite(greenled,HIGH);
+    digitalWrite(redled,LOW);
+    digitalWrite(buzzer,LOW);  
+    display.clearDisplay();
+    display.setCursor(0,0);
+    display.setTextColor(WHITE);
+    display.setTextSize(1);
+    display.println("YOU ARE GOING ALL WELL.");
+     display.println("Your Speed is : ");
+    display.print(srvo/2);
+    display.print(" km/h.");
+    display.display();
+    delay(10);
+   // display.startscrollright(0x00,0x00);
+    display.clearDisplay();
+    delay(50);
+  }
+  Blynk.virtualWrite(V0,srvo/2);
+  Blynk.run();
+}
